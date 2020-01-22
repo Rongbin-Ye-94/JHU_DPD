@@ -1,0 +1,118 @@
+---
+title: "Food Inspection in Chicago_Robin Ye"
+author: "Rongbin_Ye"
+date: "1/21/2020"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## *Why Inspection Prediction? Public, Private, Commercial Good*
+As a gourmet, one of the largest concerns is the food security. 
+From a macro perspective, both different facility owners and inspectors
+would love to know the result of their inspection so they can prepare
+appropriate resources for additional work or improvement.
+
+1. Demand: 
+  - People want to have decent, clean food
+  - Facilities' owners
+  - inspectors at Chicago City
+
+2. Function:
+  - Show location
+  - Dashboard control for RiskType, FacilitiesType
+  - Predict Outcome of Inspection
+
+
+
+```{r cars, echo = TRUE, warning=FALSE, results='hide'}
+library(readr)
+library(tidyverse)
+inspection_data <- data.table::fread('https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD')
+
+length(inspection_data$`Inspection ID`)
+```
+
+```{r,, echo=FALSE}
+## Data Cleaning
+    main_data <- inspection_data %>% 
+        filter(inspection_data$Results == c('Pass', 'Fail', 'Pass w/ Conditions') 
+               & inspection_data$`Facility Type` == c('Restaurant', 'School', 'Bakery', 'Catering')
+               & inspection_data$`Inspection Type` == 'Canvass')%>%
+        select(`Inspection ID`,`Facility Type`, Results, Risk, Latitude, Longitude, Location)
+    
+    ## Drop all NAs
+    main_data <- drop_na(main_data)
+    
+    ### Convert all lower class
+    main_data$`Facility Type` <- tolower(main_data$`Facility Type`)
+    main_data$Results <- tolower(main_data$Results)
+    main_data$Risk <- tolower(main_data$Risk)
+    
+    ### Target for Pass or Fail
+    main_data$Results <- ifelse(main_data$Results == "fail", "fail", "pass")
+    
+    ### Convert to factors
+    main_data$Results <- as.factor(main_data$Results)
+    main_data$Risk <- as.factor(main_data$Risk)
+    main_data$`Facility Type` <- as.factor(main_data$`Facility Type`)
+    
+    ### Round Up lat & Lon
+    main_data$Latitude <- round(main_data$Latitude, 4)
+    main_data$Longitude <- round(main_data$Longitude, 4)
+    
+    ### main_data
+    main_data<- main_data %>% mutate(Ftype = `Facility Type`) %>%
+        select(-`Inspection ID`, -Location,- `Facility Type`)
+    
+```
+## *Data in Use*
+The data has been scrapped directly from the records of Chicago City Hall website. 
+The original training data contains 199943 records in total. After the data manipulation, 
+I restricted the conditions to four major elements:
+1. **Facility Type:** School, Bakery, Restaurant, and school.
+2. **Risk TYpe:** Risk 1(High), Risk 2(Medium), Risk 3(Low)
+3. **Location(Longtitude & Latitude)**
+
+The summary is as follow: 
+```{r, echo=TRUE, tidy=TRUE}
+  summary(main_data)
+```
+!["Chicago skyline"](CHICAGO.jpg){width=50%}
+
+## *Empower Prediction by Logistic Regression*
+
+The basic model used here is the logstic model, regarding the existing independent variables, categorical and numeric. The model summary is as follow:
+```{r, tidy=TRUE}
+    model_Go <- glm(formula = Results ~ Ftype + Risk + Latitude + Longitude, 
+                    data = main_data,
+                    family = binomial)
+    summary(model_Go)
+```
+The model performs effectively but requires time to run on the server at this stage. 
+
+## *Why this App?* 
+Before showing the real app, hereby I provide a summary of the UI elements. 
+The sidepanel includes 4 major inputs groups. 
+
+- Longtitude & Latitude: These inputs turn into the locator.
+- Ftype:                 This inputs provides the facility type.
+- Rtype:                 This inputs provides the risk type. 
+- Show Summary:           This option enable users to hide the summary.
+
+This app provides a **convinent**, **powerful**, **reiliable** predictor for any one interested in the subject.
+
+## *Thank You & Lets try it.* 
+
+Thank You and lets try it out. 
+
+- Links as follow: 
+"https://ronngbinye94.shinyapps.io/RY_DPDW4_noicon/"
+
+
+
+
+
+
